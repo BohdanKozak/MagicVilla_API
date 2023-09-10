@@ -60,12 +60,14 @@ namespace MagicVilla_Web.Controllers
                 var response = await _villaNumberService.CreateAsync<APIResponce>(model.VillaNumber);
                 if (response != null && response.IsSuccess)
                 {
+                    TempData["success"] = "VillaNumber Created Successfully";
                     return RedirectToAction(nameof(IndexVillaNumber));
                 }
                 else
                 {
                     if (response.ErrorMessages.Count > 0)
                     {
+                        TempData["error"] = "Error encountered";
                         ModelState.AddModelError("ErrorMessages", response.ErrorMessages.FirstOrDefault());
                     }
                 }
@@ -106,29 +108,53 @@ namespace MagicVilla_Web.Controllers
 
 
                 villaNumber.VillaNumber = JsonConvert.DeserializeObject<VillaNumberUpdateDTO>(Convert.ToString(response.Result));
+
                 return View(villaNumber);
             }
+
             return NotFound();
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateVilla(VillaNumberUpdateDTO villaNumber)
+        public async Task<IActionResult> UpdateVillaNumber(VillaNumberUpdateVM model)
         {
             if (ModelState.IsValid)
             {
-                var response = await _villaNumberService.UpdateAsync<VillaNumberUpdateDTO>(villaNumber);
-                return RedirectToAction(nameof(IndexVillaNumber));
+                var response = await _villaNumberService.UpdateAsync<APIResponce>(model.VillaNumber);
+                if (response != null && response.IsSuccess)
+                {
+                    TempData["success"] = "VillaNumber Updated Successfully";
+                    return RedirectToAction(nameof(IndexVillaNumber));
+                }
+                else
+                {
+                    if (response.ErrorMessages.Count > 0)
+                    {
+                        TempData["error"] = "Error encountered";
+                        ModelState.AddModelError("ErrorMessages", response.ErrorMessages.FirstOrDefault());
+                    }
+                }
             }
 
-            return View(villaNumber);
+            var resp = await _villaService.GetAllAsync<APIResponce>();
+            if (resp != null && resp.IsSuccess)
+            {
+                model.VillaList = JsonConvert.DeserializeObject<List<VillaDTO>>
+                    (Convert.ToString(resp.Result)).Select(i => new SelectListItem
+                    {
+                        Text = i.Name,
+                        Value = i.Id.ToString()
+                    });
+            }
+            return View(model);
 
         }
 
 
-        public async Task<IActionResult> DeleteVilla(int id)
+        public async Task<IActionResult> DeleteVillaNumber(int villaNo)
         {
-            var response = await _villaNumberService.DeleteAsync<APIResponce>(id);
-
+            var response = await _villaNumberService.DeleteAsync<APIResponce>(villaNo);
+            TempData["success"] = "VillaNumber Deleted Successfully";
             return RedirectToAction(nameof(IndexVillaNumber));
         }
     }
